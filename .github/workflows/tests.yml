@@ -36,3 +36,14 @@ jobs:
           python -c "import json; d=json.load(open('result.json')); assert d['schema']==1; print(d['counts'])"
           python -m medic fix --all
         shell: bash
+
+      - name: Check the dashboard's assets ship with the package
+        run: |
+          python -c "
+          import os, medic.web.server as s
+          for name in ('index.html', 'style.css', 'app.js'):
+              path = os.path.join(s.STATIC_DIR, name)
+              assert os.path.isfile(path), f'missing {name}'
+          print('dashboard assets present')
+          "
+        shell: bash

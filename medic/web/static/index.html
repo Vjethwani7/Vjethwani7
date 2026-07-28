@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>medic</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🩺</text></svg>">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>medic</h1>
+      <p class="host" id="host-line">connecting…</p>
+    </div>
+  </div>
+
+  <div class="topbar-actions">
+    <span class="badge badge-readonly" id="mode-badge" hidden>read-only</span>
+    <button class="btn btn-primary" id="run-btn" disabled>Run diagnostics</button>
+  </div>
+</header>
+
+<main>
+  <!-- Empty state, shown before the first run -->
+  <section class="panel empty" id="intro">
+    <h2>Nothing checked yet</h2>
+    <p>
+      Run the diagnostics to inspect disks, memory, CPU, services, logs,
+      network and hardware. Checks are read-only — nothing on this machine
+      changes until you explicitly apply a repair.
+    </p>
+    <label class="field">
+      <span>Depth</span>
+      <select id="profile">
+        <option value="full" selected>Full — everything (slower)</option>
+        <option value="quick">Quick — skip the slower checks</option>
+      </select>
+    </label>
+  </section>
+
+  <!-- Progress -->
+  <section class="panel progress" id="progress" hidden>
+    <div class="progress-head">
+      <span id="progress-label">Starting…</span>
+      <span class="mono" id="progress-count"></span>
+    </div>
+    <div class="bar"><div class="bar-fill" id="progress-bar"></div></div>
+  </section>
+
+  <!-- Summary -->
+  <section class="summary" id="summary" hidden>
+    <div class="stat stat-critical"><span class="n" id="n-critical">0</span><span class="l">critical</span></div>
+    <div class="stat stat-warn"><span class="n" id="n-warn">0</span><span class="l">warnings</span></div>
+    <div class="stat stat-info"><span class="n" id="n-info">0</span><span class="l">notes</span></div>
+    <div class="stat stat-unknown"><span class="n" id="n-unknown">0</span><span class="l">unknown</span></div>
+    <div class="stat stat-meta"><span class="n" id="n-checks">0</span><span class="l">checks run</span></div>
+  </section>
+
+  <!-- Findings -->
+  <section id="findings" class="findings" hidden></section>
+
+  <section class="panel all-clear" id="all-clear" hidden>
+    <h2>No problems found</h2>
+    <p>Every check that could run on this machine came back healthy.</p>
+  </section>
+
+  <!-- Repairs -->
+  <section class="repairs" id="repairs" hidden>
+    <div class="section-head">
+      <h2>Repairs</h2>
+      <p id="repairs-note"></p>
+    </div>
+    <div id="fix-list" class="fix-list"></div>
+  </section>
+
+  <!-- Skipped checks -->
+  <section class="panel skipped" id="skipped" hidden>
+    <details>
+      <summary><span id="skipped-count"></span> checks did not run</summary>
+      <div id="skipped-list" class="skipped-list"></div>
+    </details>
+  </section>
+</main>
+
+<!-- Plan dialog -->
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <header class="modal-head">
+      <h2 id="modal-title">Repair preview</h2>
+      <button class="btn btn-ghost btn-icon" id="modal-close" aria-label="Close">&times;</button>
+    </header>
+    <div class="modal-body" id="modal-body"></div>
+    <footer class="modal-foot">
+      <p class="modal-note" id="modal-note"></p>
+      <div class="modal-buttons">
+        <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+        <button class="btn btn-danger" id="modal-apply" hidden>Apply these changes</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<footer class="footer">
+  <span>medic <span id="version" class="mono"></span></span>
+  <span>Serving on localhost only · nothing leaves this machine</span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

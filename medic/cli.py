@@ -133,6 +133,37 @@ def build_parser() -> argparse.ArgumentParser:
     )
     config_cmd.set_defaults(func=cmd_config)
 
+    serve_cmd = subparsers.add_parser(
+        "serve",
+        parents=[common],
+        help="open the dashboard in a browser",
+        description=(
+            "Serve the medic dashboard on this machine. Binds to localhost only, "
+            "and is read-only unless --allow-fixes is given."
+        ),
+    )
+    serve_cmd.add_argument("--port", type=int, default=8765, help="port to listen on (default 8765)")
+    serve_cmd.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="address to bind (default 127.0.0.1; anything else needs --i-know-what-im-doing)",
+    )
+    serve_cmd.add_argument(
+        "--allow-fixes",
+        action="store_true",
+        help="permit applying repairs from the browser (previews always work)",
+    )
+    serve_cmd.add_argument(
+        "--open", dest="open_browser", action="store_true", help="open a browser window"
+    )
+    serve_cmd.add_argument(
+        "--i-know-what-im-doing",
+        dest="force_bind",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+    serve_cmd.set_defaults(func=cmd_serve)
+
     return parser
 
 
@@ -452,6 +483,59 @@ def cmd_config(args: argparse.Namespace) -> int:
         printer.write(f"  {key:<32} {value}")
     printer.write()
     printer.dim("  medic config --init writes these to disk so you can edit them.")
+    return EXIT_OK
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    from .web.server import serve
+
+    printer = make_printer(args)
+    config = Config.load(getattr(args, "config", None))
+
+    # Binding off-loopback exposes an API that can modify this machine to
+    # anyone who can reach the port. Refuse unless the user really insists.
+    if args.host not in ("127.0.0.1", "localhost", "::1") and not args.force_bind:
+        printer.write(f"error: refusing to bind {args.host} — that exposes this machine")
+        printer.write("       the dashboard is designed for localhost only")
+        printer.write("       pass --i-know-what-im-doing to override")
+        return EXIT_USAGE
+
+    def announce(app) -> None:
+        printer.header("medic dashboard")
+        printer.write(f"  {printer.paint(app.url, reporting.BOLD)}")
+        printer.write()
+        if app.allow_fixes:
+            printer.write(
+                f"  {printer.paint('Repairs can be applied from this page.', reporting.BOLD)}"
+                " Each one still previews first."
+            )
+        else:
+            printer.dim("  Read-only: previews work, applying is disabled.")
+            printer.dim("  Restart with --allow-fixes to enable repairs.")
+        printer.write()
+        printer.dim("  The URL contains a session token. Anyone with it can use this")
+        printer.dim("  dashboard, so do not share it. Press Ctrl+C to stop.")
+        printer.write()
+
+    try:
+        serve(
+            host=args.host,
+            port=args.port,
+            allow_fixes=args.allow_fixes,
+            offline=args.offline,
+            open_browser=args.open_browser,
+            config=config,
+            on_ready=announce,
+        )
+    except OSError as exc:
+        if getattr(exc, "errno", None) in (48, 98):  # EADDRINUSE
+            printer.write(f"error: port {args.port} is already in use")
+            printer.write("       pick another with --port, or stop whatever is using it")
+            return EXIT_USAGE
+        printer.write(f"error: could not start the server: {exc}")
+        return EXIT_USAGE
+
+    printer.write("  dashboard stopped")
     return EXIT_OK
 
 

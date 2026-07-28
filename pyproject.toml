@@ -36,6 +36,10 @@ medic = "medic.cli:main"
 [tool.setuptools.packages.find]
 include = ["medic*"]
 
+# The dashboard's HTML/CSS/JS are part of the package, not build artefacts.
+[tool.setuptools.package-data]
+"medic.web" = ["static/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
