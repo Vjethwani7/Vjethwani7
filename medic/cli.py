@@ -164,6 +164,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     serve_cmd.set_defaults(func=cmd_serve)
 
+    gui_cmd = subparsers.add_parser(
+        "gui",
+        parents=[common],
+        help="open the desktop application",
+        description=(
+            "Open medic's desktop window. Same engine as the command line: "
+            "repairs still preview first and ask before changing anything."
+        ),
+    )
+    gui_cmd.set_defaults(func=cmd_gui)
+
     return parser
 
 
@@ -484,6 +495,27 @@ def cmd_config(args: argparse.Namespace) -> int:
     printer.write()
     printer.dim("  medic config --init writes these to disk so you can edit them.")
     return EXIT_OK
+
+
+def cmd_gui(args: argparse.Namespace) -> int:
+    from . import gui
+
+    printer = make_printer(args)
+
+    if not gui.tkinter_available():
+        # Tk ships with Python on macOS and Windows, but most Linux distros
+        # split it into a separate package, so say how to get it.
+        printer.write("error: this Python has no tkinter, which the desktop app needs")
+        printer.write()
+        printer.write("  Debian/Ubuntu:  sudo apt install python3-tk")
+        printer.write("  Fedora/RHEL:    sudo dnf install python3-tkinter")
+        printer.write("  Arch:           sudo pacman -S tk")
+        printer.write("  macOS/Windows:  reinstall Python from python.org")
+        printer.write()
+        printer.dim("  Or use the browser dashboard instead:  medic serve --open")
+        return EXIT_USAGE
+
+    return gui.launch(offline=args.offline)
 
 
 def cmd_serve(args: argparse.Namespace) -> int:

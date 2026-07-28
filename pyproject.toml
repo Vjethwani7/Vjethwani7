@@ -33,6 +33,11 @@ dev = ["pytest>=7.0"]
 [project.scripts]
 medic = "medic.cli:main"
 
+# A gui-script launches without a console window attached on Windows,
+# which is what makes the desktop app double-clickable there.
+[project.gui-scripts]
+medic-gui = "medic.gui:launch"
+
 [tool.setuptools.packages.find]
 include = ["medic*"]
 

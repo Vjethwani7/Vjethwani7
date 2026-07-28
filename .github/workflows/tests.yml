@@ -21,11 +21,22 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install Tk and a virtual display (Linux)
+        # Tk ships with Python on macOS and Windows; Debian splits it out.
+        # Xvfb lets the desktop-app smoke tests actually run in CI.
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
+
       - name: Install
         run: pip install -e ".[dev]"
 
       - name: Run tests
         run: python -m pytest
+        if: runner.os != 'Linux'
+
+      - name: Run tests (with a display)
+        run: xvfb-run -a python -m pytest
+        if: runner.os == 'Linux'
 
       - name: Smoke-test the CLI
         # Diagnose exits non-zero when it finds problems, which is expected

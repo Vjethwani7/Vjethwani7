@@ -1,8 +1,8 @@
 # medic
 
 A tool that inspects your computer, explains what is wrong in plain language,
-and repairs what it safely can. Use it from the terminal, or from a local web
-dashboard.
+and repairs what it safely can. Three front ends over one engine: a terminal
+command, a desktop app, and a local web dashboard.
 
 ```
 $ medic diagnose
@@ -31,8 +31,9 @@ medic  laptop  Ubuntu 24.04 LTS  x86_64
     medic fix clean.package-cache clean.user-cache --apply  # actually do it
 ```
 
-Prefer a UI? `medic serve` puts the same engine behind a local web page —
-see [the dashboard](#the-dashboard).
+Prefer clicking? `medic gui` opens a [desktop window](#the-desktop-app) and
+`medic serve` opens a [browser dashboard](#the-dashboard) — same engine, same
+safety rules, in both.
 
 ## Install
 
@@ -120,6 +121,33 @@ undo it:
   Applying these would free about 3.4 GB.
 ```
 
+### The desktop app
+
+```bash
+medic gui      # or run the installed `medic-gui` launcher directly
+```
+
+A native window over the same engine: severity-coded findings, a Repairs
+tab, a live progress bar, and light/dark following your desktop setting
+(overridable in the View menu). **File → Export report…** writes the same
+Markdown report the CLI produces.
+
+Repairs behave exactly as they do on the command line. Clicking *Preview*
+shows the plan — every command, every size estimate, every undo note — and
+applying then asks a second time before touching anything.
+
+It uses Tk, which ships with Python on macOS and Windows. Most Linux
+distributions split it into a separate package:
+
+```bash
+sudo apt install python3-tk       # Debian/Ubuntu
+sudo dnf install python3-tkinter  # Fedora/RHEL
+sudo pacman -S tk                 # Arch
+```
+
+`medic gui` tells you this rather than crashing if Tk is missing, and
+points you at `medic serve` as an alternative.
+
 ### The dashboard
 
 If you would rather click than type, `medic serve` puts the same engine
@@ -184,7 +212,7 @@ will and will not do.
 
 **Nothing runs without you asking.** There is no background agent, no
 scheduled task, and no auto-start. `medic diagnose` and `medic fix` do exactly
-one run per command and then exit. `medic serve` is the one long-running mode,
+one run per command and then exit; `medic gui` is an ordinary window you close. `medic serve` is the one long-running mode,
 and it only lives as long as you leave that terminal open — it listens on
 localhost, holds no privileges you did not already have, and stops on Ctrl+C.
 
@@ -308,11 +336,15 @@ pip install -e ".[dev]"
 python -m pytest
 ```
 
-245 tests, no network access required. The suite scripts all system command
+270 tests, no network access required. The suite scripts all system command
 output through a fake context, so tests never depend on the machine running
 them — except for two areas where being sure matters more than being fast:
 the guardrail tests use real temporary directories, and the dashboard tests
 start a real HTTP server on an ephemeral port and drive it over the wire.
+
+The desktop app keeps its logic in a Tk-free controller so most of it is
+testable headlessly; the window itself is smoke-tested only where a display
+exists, and skipped otherwise.
 
 ## License
 
